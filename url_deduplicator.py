@@ -6,5 +6,7 @@ class URLDeDuplicator:
     def dedup_url(self, incoming_urls, visited_urls) -> set:
         if incoming_urls is None:
             return set()
+        if visited_urls is None:
+            return incoming_urls
 
         return incoming_urls - visited_urls
