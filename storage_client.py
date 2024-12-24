@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 # Maybe implement some kind of streaming to file ?
-class CrawlerStorage:
+class StorageClient:
     def __init__(self):
         self.storage = {}
 

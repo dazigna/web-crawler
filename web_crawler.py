@@ -7,7 +7,7 @@ import httpx
 import random
 
 from network_client import NetworkClient
-from storage_client import CrawlerStorage
+from storage_client import StorageClient
 from html_parser import HTMLParser
 from url_filter import URLFilter
 from url_deduplicator import URLDeDuplicator
@@ -49,7 +49,7 @@ class WebCrawler:
         self,
         start_url: str,
         network_client: NetworkClient = NetworkClient(),
-        storage_client: CrawlerStorage = CrawlerStorage(),
+        storage_client: StorageClient = StorageClient(),
         num_workers: int = 2,
         max_retries: int = 3,
         backoff: int = 5,
