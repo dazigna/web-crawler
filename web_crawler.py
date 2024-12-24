@@ -1,7 +1,6 @@
 import sys
 import asyncio
 import time
-from dataclasses import dataclass
 import logging
 import httpx
 import random
@@ -12,6 +11,7 @@ from html_parser import HTMLParser
 from url_filter import URLFilter
 from url_deduplicator import URLDeDuplicator
 from robot_parser import RobotParser
+from url_container import URLContainer
 
 
 logging.basicConfig(
@@ -23,25 +23,6 @@ logging.basicConfig(
 
 logger = logging.getLogger("web_crawler")
 logging.getLogger("chardet.charsetprober").disabled = True
-
-
-@dataclass
-class URLContainer:
-    _base_url: str
-    _tries: int = 0
-
-    @property
-    def base_url(self):
-        self._tries += 1
-        return self._base_url
-
-    @base_url.setter
-    def base_url(self, value):
-        self._base_url = value
-
-    @property
-    def tries(self):
-        return self._tries
 
 
 class WebCrawler:
@@ -66,7 +47,6 @@ class WebCrawler:
         self.storage_client = storage_client
 
         self.to_visit_queue = asyncio.Queue()
-        self.currently_visiting = set()
         self.num_workers = num_workers
         self.max_retries = max_retries
         self.backoff = backoff
@@ -78,7 +58,6 @@ class WebCrawler:
         logger.info(
             f"{self.start_url} added to queue, queue size: {self.to_visit_queue.qsize()}"
         )
-
         # Worker creation
         workers = [
             asyncio.create_task(self.workers(), name=f"worker_{i}")
