@@ -1,0 +1,87 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0" version="25.0.3">
+  <diagram name="Page-1" id="hY9GrPfQQuvnadhj_Kaw">
+    <mxGraphModel dx="1234" dy="1157" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="r9ONDj-XhLsSSKAia-S3-9" target="r9ONDj-XhLsSSKAia-S3-11" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-32" value="&lt;div&gt;Reads/write to queue&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="r9ONDj-XhLsSSKAia-S3-12" vertex="1" connectable="0">
+          <mxGeometry x="-0.05" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-9" value="Queue" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="210" y="450" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-31" value="Pulls Robots.txt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="r9ONDj-XhLsSSKAia-S3-11" target="r9ONDj-XhLsSSKAia-S3-25" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-34" value="Dispatches" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="r9ONDj-XhLsSSKAia-S3-11" target="r9ONDj-XhLsSSKAia-S3-13" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-11" value="Scheduler" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="210" y="310" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="r9ONDj-XhLsSSKAia-S3-13" target="r9ONDj-XhLsSSKAia-S3-15" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-35" value="Reads/writes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="r9ONDj-XhLsSSKAia-S3-16" vertex="1" connectable="0">
+          <mxGeometry x="-0.1917" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-19" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="r9ONDj-XhLsSSKAia-S3-13" target="r9ONDj-XhLsSSKAia-S3-17" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="r9ONDj-XhLsSSKAia-S3-13" target="r9ONDj-XhLsSSKAia-S3-9" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="470" y="480" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-33" value="Writes to queue only non visited url" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="r9ONDj-XhLsSSKAia-S3-21" vertex="1" connectable="0">
+          <mxGeometry x="0.272" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-37" value="Text" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="r9ONDj-XhLsSSKAia-S3-21" vertex="1" connectable="0">
+          <mxGeometry x="-0.296" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-13" value="Crawling unit" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="410" y="310" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-15" value="URL Storage" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="600" y="450" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-17" value="website" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="410" y="160" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-29" value="Reads" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="r9ONDj-XhLsSSKAia-S3-23" target="r9ONDj-XhLsSSKAia-S3-11" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="340" />
+              <mxPoint x="170" y="340" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-23" value="Init URL" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry y="310" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-25" value="Get robots.txt and parse config" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="210" y="170" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-28" value="&lt;div&gt;Crawling unit&lt;/div&gt;&lt;div&gt;Check if visited before or duplicate&lt;br&gt;&lt;/div&gt;&lt;div&gt;filter out links&lt;/div&gt;&lt;div&gt;Extract URLs&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="90" y="730" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r9ONDj-XhLsSSKAia-S3-36" value="Writes Visited URL along with assocaited links" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="690" y="330" width="120" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
