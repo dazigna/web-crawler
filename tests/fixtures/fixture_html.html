@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Fixtures</title>
+</head>
+
+<body>
+    <!-- Link tag to an internal document -->
+    <a href="#section1">Go to Section 1</a>
+
+    <!-- Link tag to an external document -->
+    <a href="https://www.example.com">Visit Example</a>
+
+    <!-- Link tag with target="_blank" for opening in a new tab -->
+    <a href="/test" target="_blank">Visit Example in a new tab</a>
+
+    <!-- Link tag with rel="noopener noreferrer" for security -->
+    <a href="https://www.subdomain.example.com" rel="noopener noreferrer">Visit Example in a new tab (security)</a>
+
+    <!-- Image tag to display an image -->
+    <img src="example.jpg" alt="Example Image">
+
+    <!-- Video tag to play a video -->
+    <video controls width="320" height="240">
+        <source src="example.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Audio tag to play audio -->
+    <audio controls>
+        <source src="example.mp3" type="audio/mp3">
+        Your browser does not support the audio tag.
+    </audio>
+
+    <!-- Anchor tag with a form action -->
+    <a href="/submit" method="post">Submit Form</a>
+
+    <!-- Form tag with a submit button -->
+    <form action="/submit">
+        <input type="text" name="name" placeholder="Name">
+        <input type="submit" value="Submit">
+    </form>
+</body>
+
+</html>
