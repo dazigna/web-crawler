@@ -7,11 +7,17 @@ logger = logging.getLogger(__name__)
 
 class StorageClient:
     """
+
     StorageClient is a simple in-memory storage client for storing and retrieving data associated with URLs.
+
+    Attributes:
+        storage (dict): A dictionary to store URLs and their associated data.
+        output_file_path (Path): The path where the output file will be saved.
+        output_file_name (str): The name of the output file.
 
     Methods:
         __init__():
-            Initializes the StorageClient with an empty storage dictionary.
+            Initializes the StorageClient with an empty storage dictionary, output file path, and output file name.
 
         add(url, data=None):
             Adds a URL and its associated data to the storage.

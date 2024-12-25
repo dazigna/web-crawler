@@ -125,7 +125,7 @@ class WebCrawler:
             worker.cancel()
 
         # Save to file
-        self.storage_client.write_to_file("storage.json")
+        self.storage_client.write_to_file()
 
     async def workers(self):
         """
