@@ -59,7 +59,7 @@ class NetworkClient:
             # if not ("text/html" in resp_head.headers.get("Content-Type", "")):
             #     logger.warning(f"Content type is not HTML for {url}")
             #     return
-            resp = await self.client.get(url, headers=headers, follow_redirects=True)
+            resp = await self.client.get(url, headers=headers)
             resp.raise_for_status()
             return BeautifulSoup(resp.text, "html.parser")
         except httpx.RequestError as exc:

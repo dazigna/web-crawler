@@ -21,11 +21,39 @@ logging.basicConfig(
     level=logging.INFO,
     datefmt="%H:%M:%S",
     encoding="utf-8",
-    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
+    handlers=[logging.FileHandler("debug.log", mode="w"), logging.StreamHandler()],
 )
 
 logger = logging.getLogger("web_crawler")
 logging.getLogger("chardet.charsetprober").disabled = True
+
+
+class WebCrawlerException(Exception):
+    """Base exception class for web crawler errors."""
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class RateLimitException(WebCrawlerException):
+    """Raised when crawler hits rate limits."""
+
+    pass
+
+
+class RedirectException(WebCrawlerException):
+    """Raised when crawler hits rate limits."""
+
+    def __init__(self, message, redirect_url=None, status_code=None):
+        self.redirect_url = redirect_url
+        self.status_code = status_code
+        super().__init__(message)
+
+
+class NotFoundException(WebCrawlerException):
+    """Raised when crawler hits rate limits."""
+
+    pass
 
 
 class WebCrawler:
@@ -183,46 +211,49 @@ class WebCrawler:
         url_to_visit = url_to_visit_container.base_url
 
         logger.info(f"Visiting {url_to_visit}")
+        logger.info(f"Queue size: {self.to_visit_queue.qsize()}")
         try:
+            # Check if link has already been crawled
+            if self.storage_client.get(url_to_visit):
+                logger.info(f"URL already visited: {url_to_visit}")
+                return
             # Check if we can fetch the URL based on robots.txt
             if self.robot_parser.can_fetch("*", url_to_visit):
                 unique_urls = await self.crawling(url_to_visit)
                 logger.info(f"Unique urls found: {len(unique_urls)}")
+                logger.info(f"Unique urls found: {unique_urls}")
                 for url in unique_urls:
                     await self.to_visit_queue.put(URLContainer(url))
             else:
                 logging.warning(f"Robots.txt prevents fetching {url_to_visit}")
 
         # need to handle 429 error
-        except httpx.HTTPStatusError as exc:
-            # Poor man's back pressure - add Jitter to avoid synchronous behavior
-            if exc.response.status_code == 429 and url_to_visit_container.tries < 3:
-                back_pressure = (
-                    self.backoff + random.uniform(0, self.backoff)
-                ) * url_to_visit_container.tries
-                logger.warning(
-                    f"Rate limited - retrying {url_to_visit} in {back_pressure} seconds"
-                )
-                await asyncio.sleep(back_pressure)
-                await self.to_visit_queue.put(url_to_visit_container)
-            elif exc.response.status_code == 301:
-                logger.warning(f"Redirected to {exc.response.headers['Location']}")
-                await self.to_visit_queue.put(
-                    URLContainer(exc.response.headers["Location"])
-                )
-            else:
-                logger.error(f"Error processing {url_to_visit}: {exc}")
-        except Exception as e:
-            logger.error(f"Error processing {url_to_visit}: {e}")
+        except RateLimitException as exc:
+            back_pressure = (
+                self.backoff + random.uniform(0, self.backoff)
+            ) * url_to_visit_container.tries
+            logger.warning(
+                f"{exc} Rate limited - retrying {url_to_visit} in {back_pressure} seconds"
+            )
+            await asyncio.sleep(back_pressure)
+            await self.to_visit_queue.put(url_to_visit_container)
+        except RedirectException as exc:
+            logger.warning(f"{url_to_visit} Redirected to {exc.redirect_url}")
+            redirect_url = exc.redirect_url
+            await self.to_visit_queue.put(URLContainer(redirect_url))
+        except NotFoundException as exc:
+            logger.warning(f"{exc} - Page not found for {url_to_visit}")
+        except Exception as exc:
+            logger.error(f"Error processing {url_to_visit}: {exc}")
             # Stop retrying link after max_retries
             if url_to_visit_container.tries < self.max_retries:
-                logger.info(
+                logger.warning(
                     f"Retrying {url_to_visit} - try {url_to_visit_container.tries}"
                 )
                 await self.to_visit_queue.put(url_to_visit_container)
             else:
                 logger.error(
-                    f"Error processing {url_to_visit}: {e} and Max retries reached - skipping"
+                    f"Error processing {url_to_visit}: {exc} and Max retries reached - skipping"
                 )
         finally:
             self.to_visit_queue.task_done()
@@ -246,25 +277,40 @@ class WebCrawler:
         logger.info(f"Crawling {url}")
 
         # Get HTML content
-        html_content = await self.network_client.query_html(url)
-
+        try:
+            html_content = await self.network_client.query_html(url)
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                self.storage_client.add(url)
+                raise NotFoundException(f"Page not found for {url}")
+            elif e.response.status_code == 429:
+                raise RateLimitException(f"Rate limited for {url}")
+            elif e.response.status_code in (301, 302):
+                self.storage_client.add(url)
+                raise RedirectException(
+                    f"Redirected for {url}",
+                    redirect_url=str(e.response.next_request.url),
+                    status_code=e.response.status_code,
+                )
+            else:
+                raise e
         # Parse HTML content
-        if not html_content:
-            self.storage_client.add(url)
-            return
+        # if not html_content:
+        #     self.storage_client.add(url)
+        #     return
 
         # Extract all links
         html_urls = HTMLParser().extract_links(
             self.url_filter.filter_links, html_content
         )
 
-        # filter out duplicates
-        unique_urls = URLDeDuplicator().dedup_url(
-            html_urls, set(self.storage_client.get_all())
-        )
-
         # Save to storage all the links contained in the HTML
         self.storage_client.add(url, {"links": list(html_urls)})
+
+        # filter out duplicates
+        unique_urls = URLDeDuplicator().dedup_url(
+            html_urls, set(self.storage_client.get_all_keys())
+        )
 
         return unique_urls
 
@@ -312,11 +358,11 @@ if __name__ == "__main__":
     )
 
     # Start the web crawler
-    # domain = "https://www.overstory.com"
+    domain = "https://www.overstory.com"
     # domain = "https://crawler-test.com"
-    domain = "https://realpython.github.io/fake-jobs/"
+    # domain = "https://realpython.github.io/fake-jobs/"
     # domain = "https://webscraper.io/test-sites/e-commerce/allinone"
     # domain = "https://quotes.toscrape.com/"
     args = parser.parse_args()
     logger.info(f"Starting web crawler for {args}")
-    asyncio.run(main(args.url, args.workers, args.retries, args.backoff))
+    asyncio.run(main(args.url or domain, args.workers, args.retries, args.backoff))

@@ -34,3 +34,20 @@ async def test_query_html_429():
         await network_client.query_html(url)
 
     assert exc.value.response.status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_query_html_302():
+    # Arrange
+    transport = httpx.MockTransport(
+        handler=lambda request: httpx.Response(
+            302, headers={"Content-type": "text/html"}, text="<html></html>"
+        )
+    )
+    network_client = NetworkClient(client=httpx.AsyncClient(transport=transport))
+    url = "https://example.com"
+
+    with pytest.raises(httpx.HTTPStatusError) as exc:
+        await network_client.query_html(url)
+
+    assert exc.value.response.status_code == 302

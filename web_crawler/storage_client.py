@@ -61,6 +61,7 @@ class StorageClient:
             url (str): The URL to be added to the storage.
             data (optional): The data associated with the URL. Defaults to None.
         """
+        logger.info(f"Adding URL: {url} and data: {data}")
         self.storage[url] = data
 
     def remove(self, url):
@@ -95,6 +96,16 @@ class StorageClient:
             list: A list containing all items in the storage.
         """
         return self.storage
+
+    def get_all_keys(self):
+        """
+        Retrieve all keys from the storage.
+
+        Returns:
+            list: A list containing all keys in the storage.
+        """
+        logger.info(f"Retrieving all keys from storage{self.storage.keys()}")
+        return self.storage.keys()
 
     def write_to_file(self):
         """
