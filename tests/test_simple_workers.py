@@ -1,6 +1,6 @@
 import pytest
 import asyncio
-from simple_workers import AsyncWorkers
+from web_crawler.simple_workers import AsyncWorkers
 from unittest.mock import AsyncMock, patch
 
 

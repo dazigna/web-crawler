@@ -1,4 +1,4 @@
-from url_deduplicator import URLDeDuplicator
+from web_crawler.url_deduplicator import URLDeDuplicator
 
 
 def test_dedup_url_same():

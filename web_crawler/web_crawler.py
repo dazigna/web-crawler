@@ -20,7 +20,8 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
     level=logging.INFO,
     datefmt="%H:%M:%S",
-    stream=sys.stderr,
+    encoding="utf-8",
+    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
 )
 
 logger = logging.getLogger("web_crawler")
@@ -194,18 +195,23 @@ class WebCrawler:
 
         # need to handle 429 error
         except httpx.HTTPStatusError as exc:
-            logger.error(f"Error processing {url_to_visit}: {exc}")
             # Poor man's back pressure - add Jitter to avoid synchronous behavior
             if exc.response.status_code == 429 and url_to_visit_container.tries < 3:
                 back_pressure = (
                     self.backoff + random.uniform(0, self.backoff)
                 ) * url_to_visit_container.tries
-                logger.error(
+                logger.warning(
                     f"Rate limited - retrying {url_to_visit} in {back_pressure} seconds"
                 )
                 await asyncio.sleep(back_pressure)
                 await self.to_visit_queue.put(url_to_visit_container)
-
+            elif exc.response.status_code == 301:
+                logger.warning(f"Redirected to {exc.response.headers['Location']}")
+                await self.to_visit_queue.put(
+                    URLContainer(exc.response.headers["Location"])
+                )
+            else:
+                logger.error(f"Error processing {url_to_visit}: {exc}")
         except Exception as e:
             logger.error(f"Error processing {url_to_visit}: {e}")
             # Stop retrying link after max_retries
@@ -215,7 +221,9 @@ class WebCrawler:
                 )
                 await self.to_visit_queue.put(url_to_visit_container)
             else:
-                logger.error(f"Max retries reached for {url_to_visit} - skipping")
+                logger.error(
+                    f"Error processing {url_to_visit}: {e} and Max retries reached - skipping"
+                )
         finally:
             self.to_visit_queue.task_done()
 

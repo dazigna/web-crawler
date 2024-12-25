@@ -35,3 +35,7 @@ For dedup we can use a bloom filter A Bloom filter is a probabilistic data struc
 
 Crawler traps
 We can add a depth field to our URL table in the Metadata DB and increment this field each time we follow a link. If the depth exceeds a certain threshold, we can stop crawling the page. This will prevent us from getting stuck in a crawler trap.
+
+
+Handle normalization
+https://discuss.python.org/t/add-uri-normalization-functions-to-the-urllib-parse-module/3799/2

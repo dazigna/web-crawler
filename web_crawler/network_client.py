@@ -25,7 +25,9 @@ class NetworkClient:
     def __init__(
         self,
         client=httpx.AsyncClient(
-            timeout=5, transport=httpx.AsyncHTTPTransport(retries=3)
+            timeout=5,
+            follow_redirects=False,
+            transport=httpx.AsyncHTTPTransport(retries=3),
         ),
     ):
         self.client = client

@@ -1,4 +1,4 @@
-from storage_client import StorageClient
+from web_crawler.storage_client import StorageClient
 
 
 def test_add():

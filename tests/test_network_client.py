@@ -1,5 +1,5 @@
 import pytest
-from web_crawler import NetworkClient
+from web_crawler.network_client import NetworkClient
 import httpx
 
 

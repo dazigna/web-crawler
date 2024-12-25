@@ -1,4 +1,4 @@
-from html_parser import HTMLParser
+from web_crawler.html_parser import HTMLParser
 from bs4 import BeautifulSoup
 from pathlib import Path
 

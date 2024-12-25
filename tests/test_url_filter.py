@@ -1,4 +1,4 @@
-from url_filter import URLFilter
+from web_crawler.url_filter import URLFilter
 
 
 def test_filter_links_none():

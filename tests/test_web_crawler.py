@@ -1,11 +1,11 @@
 import pytest
-import asyncio
 import httpx
 
-from unittest.mock import AsyncMock, patch
-from web_crawler import WebCrawler
 from unittest.mock import AsyncMock, patch, MagicMock
-from web_crawler import WebCrawler, URLContainer, HTMLParser, URLDeDuplicator
+from web_crawler.web_crawler import WebCrawler
+from web_crawler.url_container import URLContainer
+from web_crawler.html_parser import HTMLParser
+from web_crawler.url_deduplicator import URLDeDuplicator
 
 
 # ----------- Scheduling logic ------------
@@ -140,6 +140,35 @@ async def test_process_crawling_unit_http_status_error_429_exceeded_retries():
     url_container = URLContainer("https://example.com", _tries=3)
     await crawler.to_visit_queue.put(url_container)
 
+    with patch("asyncio.sleep", new_callable=AsyncMock):
+        await crawler.process_crawling_unit()
+
+    assert crawler.to_visit_queue.qsize() == 0
+
+
+@pytest.mark.asyncio
+async def test_process_crawling_unit_http_status_error_301():
+    network_client = MagicMock()
+    storage_client = MagicMock()
+    robot_parser = MagicMock()
+    robot_parser.can_fetch.return_value = True
+
+    crawler = WebCrawler(
+        start_url="https://example.com",
+        network_client=network_client,
+        storage_client=storage_client,
+    )
+    crawler.robot_parser = robot_parser
+    crawler.crawling = AsyncMock(
+        side_effect=httpx.HTTPStatusError(
+            "Error", request=None, response=MagicMock(status_code=301)
+        )
+    )
+
+    url_container = URLContainer("https://example.com")
+    await crawler.to_visit_queue.put(url_container)
+
+    # Mocking asyncio.sleep to avoid waiting
     with patch("asyncio.sleep", new_callable=AsyncMock):
         await crawler.process_crawling_unit()
 
