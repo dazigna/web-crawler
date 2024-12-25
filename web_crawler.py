@@ -35,10 +35,7 @@ class WebCrawler:
         max_retries: int = 3,
         backoff: int = 5,
     ):
-        # Use Tldextract to account for different TLDs
         self.start_url = start_url
-
-        # Robot parsing
         self.network_client = network_client
         self.url_filter = URLFilter(self.start_url)
         self.robot_parser = RobotParser(self.start_url)
@@ -126,7 +123,7 @@ class WebCrawler:
             self.to_visit_queue.task_done()
 
     # Crawling unit
-    async def crawling(self, url):
+    async def crawling(self, url) -> set:
         logger.info(f"Crawling {url}")
 
         # Get HTML content
