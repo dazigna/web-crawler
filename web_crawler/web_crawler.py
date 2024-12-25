@@ -7,14 +7,14 @@ import argparse
 from pathlib import Path
 from typing import Set
 
-from network_client import NetworkClient
-from storage_client import StorageClient
-from html_parser import HTMLParser
-from url_filter import URLFilter
-from url_deduplicator import URLDeDuplicator
-from robot_parser import RobotParser
-from url_container import URLContainer
-from web_crawler_exceptions import (
+from .network_client import NetworkClient
+from .storage_client import StorageClient
+from .html_parser import HTMLParser
+from .url_filter import URLFilter
+from .url_deduplicator import URLDeDuplicator
+from .robot_parser import RobotParser
+from .url_container import URLContainer
+from .web_crawler_exceptions import (
     RateLimitException,
     RedirectException,
     NotFoundException,
