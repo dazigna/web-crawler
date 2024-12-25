@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +42,10 @@ class StorageClient:
                 filename (str): The name of the file to write the storage data to.
     """
 
-    def __init__(self):
+    def __init__(self, output_file_path: Path, output_file_name: str = "storage.json"):
         self.storage = {}
+        self.output_file_path = output_file_path
+        self.output_file_name = output_file_name
 
     def add(self, url, data=None):
         """
@@ -87,7 +90,7 @@ class StorageClient:
         """
         return self.storage
 
-    def write_to_file(self, filename):
+    def write_to_file(self):
         """
         Writes the contents of the storage to a file in JSON format.
 
@@ -97,5 +100,6 @@ class StorageClient:
         Raises:
             IOError: If the file cannot be opened or written to.
         """
-        with open(filename, "w") as f:
+        output_file_path = self.output_file_path / self.output_file_name
+        with open(output_file_path, "w") as f:
             f.write(json.dumps(self.storage, indent=4))

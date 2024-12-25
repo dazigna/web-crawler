@@ -5,6 +5,7 @@ import logging
 import httpx
 import random
 import argparse
+from pathlib import Path
 
 from network_client import NetworkClient
 from storage_client import StorageClient
@@ -64,7 +65,10 @@ class WebCrawler:
         self,
         start_url: str,
         network_client: NetworkClient = NetworkClient(),
-        storage_client: StorageClient = StorageClient(),
+        storage_client: StorageClient = StorageClient(
+            output_file_path=Path(__file__).parent.parent,
+            output_file_name="storage.json",
+        ),
         num_workers: int = 1,
         max_retries: int = 3,
         backoff: int = 5,
