@@ -39,3 +39,10 @@ We can add a depth field to our URL table in the Metadata DB and increment this 
 
 Handle normalization
 https://discuss.python.org/t/add-uri-normalization-functions-to-the-urllib-parse-module/3799/2
+
+
+Describe logic
+
+Can add streaming to file
+
+https://url.spec.whatwg.org/#url-class

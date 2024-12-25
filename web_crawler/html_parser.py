@@ -1,3 +1,5 @@
+from collections.abc import Callable
+from typing import Set
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,7 +13,7 @@ class HTMLParser:
     def __init__(self):
         pass
 
-    def extract_links(self, filtering_method, html_content: str) -> set:
+    def extract_links(self, filtering_method, html_content: str) -> Set:
         """
         Extracts and filters links from the provided HTML content.
 

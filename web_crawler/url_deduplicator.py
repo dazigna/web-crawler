@@ -1,13 +1,16 @@
-# Can be leverage to implement different comparison methods, such as cosine similarity or Jacard similarity
+from typing import Set
+
+
 class URLDeDuplicator:
     """
     A class used to deduplicate URLs.
+    Can be leverage to implement different comparison methods, such as cosine similarity or Jacard similarity
     """
 
     def __init__(self):
         pass
 
-    def dedup_url(self, incoming_urls, visited_urls) -> set:
+    def dedup_url(self, incoming_urls: Set, visited_urls: Set) -> Set:
         """
         Remove URLs that have already been visited from the set of incoming URLs.
 

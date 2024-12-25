@@ -24,7 +24,7 @@ class NetworkClient:
 
     def __init__(
         self,
-        client=httpx.AsyncClient(
+        client: httpx.AsyncClient = httpx.AsyncClient(
             timeout=5,
             follow_redirects=False,
             transport=httpx.AsyncHTTPTransport(retries=3),
@@ -43,28 +43,21 @@ class NetworkClient:
             str: The HTML content of the page.
 
         Raises:
-            httpx.RequestError: If an error occurs while making the request.
-            httpx.HTTPStatusError: If the response status code indicates an error.
+            let exceptions bubble up
 
         Note:
             The function sends a GET request to the specified URL with a unique User-Agent header.
-            It follows redirects and raises an exception if the request fails.
+            It does not follows redirects and raises an exception if the request fails.
         """
         headers = {
             "User-Agent": f"local-{uuid.uuid4()}",
         }
-        try:
-            # Do a Head first to check if content is HTML and do get only if content is valid - this may not be necessary
-            # resp_head = await self.client.head(url, headers=headers, timeout=5)
-            # if not ("text/html" in resp_head.headers.get("Content-Type", "")):
-            #     logger.warning(f"Content type is not HTML for {url}")
-            #     return
-            resp = await self.client.get(url, headers=headers)
-            resp.raise_for_status()
-            return BeautifulSoup(resp.text, "html.parser")
-        except httpx.RequestError as exc:
-            logger.error(f"An error occurred while requesting {exc} for {exc.request}.")
-        # except httpx.HTTPStatusError as exc:
-        #     logger.error(
-        #         f"Error response {exc.response.status_code} headers {exc.response.headers} while requesting {exc.request.url!r}."
-        #     )
+        # Possible improvement
+        # If we want to skip some requests we can do a Head first to check if content is HTML and do get only if content is valid
+        # resp_head = await self.client.head(url, headers=headers, timeout=5)
+        # if not ("text/html" in resp_head.headers.get("Content-Type", "")):
+        #     logger.warning(f"Content type is not HTML for {url}")
+        #     return
+        resp = await self.client.get(url, headers=headers)
+        resp.raise_for_status()
+        return BeautifulSoup(resp.text, "html.parser")

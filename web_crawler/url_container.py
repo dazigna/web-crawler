@@ -19,14 +19,14 @@ class URLContainer:
     _tries: int = 0
 
     @property
-    def base_url(self):
+    def base_url(self) -> str:
         self._tries += 1
         return self._base_url
 
     @base_url.setter
-    def base_url(self, value):
+    def base_url(self, value: str):
         self._base_url = value
 
     @property
-    def tries(self):
+    def tries(self) -> int:
         return self._tries

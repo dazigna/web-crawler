@@ -1,7 +1,9 @@
-import tldextract
-
+from typing import List
 from urllib.parse import urlparse, urljoin
 import logging
+
+
+import tldextract
 
 
 logger = logging.getLogger(__name__)
@@ -31,13 +33,13 @@ class URLFilter:
     def __init__(
         self,
         base_url: str,
-        allowed_schemes: list = ["http", "https"],
+        allowed_schemes: List = ["http", "https"],
     ):
         self.base_url = base_url
         self.allowed_domain = tldextract.extract(self.base_url).domain
         self.allowed_schemes = allowed_schemes
 
-    def filter_links(self, link):
+    def filter_links(self, link: str) -> str | None:
         """
         Filters and processes a given URL based on predefined rules.
 

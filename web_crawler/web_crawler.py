@@ -1,4 +1,3 @@
-import sys
 import asyncio
 import time
 import logging
@@ -6,6 +5,7 @@ import httpx
 import random
 import argparse
 from pathlib import Path
+from typing import Set
 
 from network_client import NetworkClient
 from storage_client import StorageClient
@@ -14,6 +14,11 @@ from url_filter import URLFilter
 from url_deduplicator import URLDeDuplicator
 from robot_parser import RobotParser
 from url_container import URLContainer
+from web_crawler_exceptions import (
+    RateLimitException,
+    RedirectException,
+    NotFoundException,
+)
 
 
 logging.basicConfig(
@@ -26,34 +31,6 @@ logging.basicConfig(
 
 logger = logging.getLogger("web_crawler")
 logging.getLogger("chardet.charsetprober").disabled = True
-
-
-class WebCrawlerException(Exception):
-    """Base exception class for web crawler errors."""
-
-    def __init__(self, message):
-        super().__init__(message)
-
-
-class RateLimitException(WebCrawlerException):
-    """Raised when crawler hits rate limits."""
-
-    pass
-
-
-class RedirectException(WebCrawlerException):
-    """Raised when crawler hits rate limits."""
-
-    def __init__(self, message, redirect_url=None, status_code=None):
-        self.redirect_url = redirect_url
-        self.status_code = status_code
-        super().__init__(message)
-
-
-class NotFoundException(WebCrawlerException):
-    """Raised when crawler hits rate limits."""
-
-    pass
 
 
 class WebCrawler:
@@ -136,12 +113,11 @@ class WebCrawler:
         Raises:
             asyncio.CancelledError: If the worker tasks are cancelled.
         """
-        logger.info(f"Starting crawling with {self.num_workers} workers")
         await self.to_visit_queue.put(URLContainer(self.start_url))
 
-        logger.info(
-            f"{self.start_url} added to queue, queue size: {self.to_visit_queue.qsize()}"
-        )
+        logger.info(f"Init URL: {self.start_url} added to queue ")
+        logger.debug(f"Queue size: {self.to_visit_queue.qsize()}")
+
         # Worker creation
         workers = [
             asyncio.create_task(self.workers(), name=f"worker_{i}")
@@ -161,7 +137,7 @@ class WebCrawler:
         Asynchronous worker method that continuously processes crawling units.
 
         This method logs the start of a worker, then enters an infinite loop where it:
-        - Abides by the robots.txt crawling policy by sleeping for the specified crawl delay.
+        - Abides by the robots.txt crawling policy by sleeping for the specified crawl delay with additional jitter.
         - Processes a crawling unit.
 
         If the worker is cancelled, it logs the cancellation and exits the loop.
@@ -169,14 +145,18 @@ class WebCrawler:
         Raises:
             asyncio.CancelledError: If the worker is cancelled.
         """
-        logger.info(f"Starting worker {asyncio.current_task().get_name()}")
+        logger.info(f"Worker started: {asyncio.current_task().get_name()}")
         while True:
             try:
                 # Abide by robots crawling policy
-                await asyncio.sleep(self.robot_parser.crawl_delay)
+                await asyncio.sleep(
+                    self.robot_parser.crawl_delay + random.uniform(0, 1)
+                )
                 await self.process_crawling_unit()
             except asyncio.CancelledError:
-                logger.error(f"Cancelled worker {asyncio.current_task().get_name()}")
+                logger.error(
+                    f"Worker: {asyncio.current_task().get_name()} has been cancelled"
+                )
                 return
 
     async def process_crawling_unit(self):
@@ -210,42 +190,31 @@ class WebCrawler:
         url_to_visit_container = await self.to_visit_queue.get()
         url_to_visit = url_to_visit_container.base_url
 
-        logger.info(f"Visiting {url_to_visit}")
-        logger.info(f"Queue size: {self.to_visit_queue.qsize()}")
+        logger.info(f"Visiting {url_to_visit_container.base_url}")
+        logger.debug(f"Queue size: {self.to_visit_queue.qsize()}")
         try:
             # Check if link has already been crawled
             if self.storage_client.get(url_to_visit):
-                logger.info(f"URL already visited: {url_to_visit}")
+                logger.info(f"URL already visited: {url_to_visit} - skipping")
                 return
             # Check if we can fetch the URL based on robots.txt
             if self.robot_parser.can_fetch("*", url_to_visit):
                 unique_urls = await self.crawling(url_to_visit)
-                logger.info(f"Unique urls found: {len(unique_urls)}")
-                logger.info(f"Unique urls found: {unique_urls}")
+                logger.debug(f"Unique urls found {len(unique_urls)}:\n {unique_urls}")
                 for url in unique_urls:
                     await self.to_visit_queue.put(URLContainer(url))
             else:
-                logging.warning(f"Robots.txt prevents fetching {url_to_visit}")
+                logging.info(f"Robots.txt prevents fetching {url_to_visit} - skipping")
 
-        # need to handle 429 error
-        except RateLimitException as exc:
-            back_pressure = (
-                self.backoff + random.uniform(0, self.backoff)
-            ) * url_to_visit_container.tries
-            logger.warning(
-                f"{exc} Rate limited - retrying {url_to_visit} in {back_pressure} seconds"
-            )
-            await asyncio.sleep(back_pressure)
+        except RateLimitException as _exc:
+            await self.handle_rate_limit(url_to_visit_container, self.backoff)
             await self.to_visit_queue.put(url_to_visit_container)
         except RedirectException as exc:
-            logger.warning(f"{url_to_visit} Redirected to {exc.redirect_url}")
-            redirect_url = exc.redirect_url
-            await self.to_visit_queue.put(URLContainer(redirect_url))
+            logger.info(f"{url_to_visit} Redirected to {exc.redirect_url}")
+            await self.to_visit_queue.put(URLContainer(exc.redirect_url))
         except NotFoundException as exc:
-            logger.warning(f"{exc} - Page not found for {url_to_visit}")
+            logger.info(f"{exc} - Page not found for {url_to_visit}")
         except Exception as exc:
-            logger.error(f"Error processing {url_to_visit}: {exc}")
-            # Stop retrying link after max_retries
             if url_to_visit_container.tries < self.max_retries:
                 logger.warning(
                     f"Retrying {url_to_visit} - try {url_to_visit_container.tries}"
@@ -258,7 +227,7 @@ class WebCrawler:
         finally:
             self.to_visit_queue.task_done()
 
-    async def crawling(self, url) -> set:
+    async def crawling(self, url: str) -> Set:
         """
         Crawls the given URL to extract and deduplicate links.
 
@@ -294,10 +263,6 @@ class WebCrawler:
                 )
             else:
                 raise e
-        # Parse HTML content
-        # if not html_content:
-        #     self.storage_client.add(url)
-        #     return
 
         # Extract all links
         html_urls = HTMLParser().extract_links(
@@ -314,8 +279,15 @@ class WebCrawler:
 
         return unique_urls
 
+    async def handle_rate_limit(self, url_container: URLContainer, backoff: int):
+        back_pressure = (backoff + random.uniform(0, backoff)) * url_container.tries
+        logger.warning(
+            f"Rate limited - retrying {url_container.base_url} in {back_pressure} seconds"
+        )
+        await asyncio.sleep(back_pressure)
 
-async def main(url, num_workers, max_retries, backoff):
+
+async def main(url: str, num_workers: int, max_retries: int, backoff: int):
     start_time = time.perf_counter()
     wc = WebCrawler(
         url, num_workers=num_workers, max_retries=max_retries, backoff=backoff
@@ -358,11 +330,11 @@ if __name__ == "__main__":
     )
 
     # Start the web crawler
-    domain = "https://www.overstory.com"
+    domain = "https://overstory.com"
     # domain = "https://crawler-test.com"
     # domain = "https://realpython.github.io/fake-jobs/"
     # domain = "https://webscraper.io/test-sites/e-commerce/allinone"
     # domain = "https://quotes.toscrape.com/"
     args = parser.parse_args()
-    logger.info(f"Starting web crawler for {args}")
+    logger.info(f"Starting web crawler with current args:\n {args}")
     asyncio.run(main(args.url or domain, args.workers, args.retries, args.backoff))

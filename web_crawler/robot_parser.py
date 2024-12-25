@@ -29,7 +29,9 @@ class RobotParser:
             Returns the request rate specified in the robots.txt file or the default request rate if not specified.
     """
 
-    def __init__(self, base_url, default_crawl_delay=1, default_request_rate=1):
+    def __init__(
+        self, base_url: str, default_crawl_delay: int = 1, default_request_rate: int = 1
+    ):
         self.robot_url = urljoin(base_url, "robots.txt")
         self.robot_parser = RobotFileParser()
         self._default_crawl_delay = default_crawl_delay
@@ -49,7 +51,7 @@ class RobotParser:
         self.robot_parser.set_url(self.robot_url)
         self.robot_parser.read()
 
-    def can_fetch(self, user_agent, url):
+    def can_fetch(self, user_agent: str, url: str) -> bool:
         """
         Check if a given user agent is allowed to fetch a specified URL according to the robots.txt rules.
 
@@ -63,7 +65,7 @@ class RobotParser:
         return self.robot_parser.can_fetch(user_agent, url)
 
     @property
-    def crawl_delay(self):
+    def crawl_delay(self) -> int:
         """
         Returns the crawl delay for the web crawler.
 
@@ -76,7 +78,7 @@ class RobotParser:
         return self.robot_parser.crawl_delay("*") or self._default_crawl_delay
 
     @property
-    def request_rate(self):
+    def request_rate(self) -> int:
         """
         Retrieves the request rate for the web crawler.
 
