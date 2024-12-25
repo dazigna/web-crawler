@@ -31,11 +31,10 @@ class WebCrawler:
         start_url: str,
         network_client: NetworkClient = NetworkClient(),
         storage_client: StorageClient = StorageClient(),
-        num_workers: int = 2,
+        num_workers: int = 1,
         max_retries: int = 3,
         backoff: int = 5,
     ):
-
         # Use Tldextract to account for different TLDs
         self.start_url = start_url
 
@@ -104,7 +103,6 @@ class WebCrawler:
             logger.error(f"Error processing {url_to_visit}: {exc}")
             # Poor man's back pressure - add Jitter to avoid synchronous behavior
             if exc.response.status_code == 429 and url_to_visit_container.tries < 3:
-
                 back_pressure = (
                     self.backoff + random.uniform(0, self.backoff)
                 ) * url_to_visit_container.tries
@@ -125,7 +123,6 @@ class WebCrawler:
             else:
                 logger.error(f"Max retries reached for {url_to_visit} - skipping")
         finally:
-            # WHY AM I DOING THIS?
             self.to_visit_queue.task_done()
 
     # Crawling unit
