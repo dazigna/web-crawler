@@ -7,6 +7,21 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkClient:
+    """
+    NetworkClient is a class that provides asynchronous methods to query HTML content from a given URL using the httpx library.
+
+    Attributes:
+        client (httpx.AsyncClient): An instance of httpx.AsyncClient used to make HTTP requests.
+
+    Methods:
+        __init__(client=httpx.AsyncClient): Initializes the NetworkClient with an optional httpx.AsyncClient instance.
+        query_html(url: str) -> str: Asynchronously queries the given URL and returns the HTML content.
+
+    Example:
+        client = NetworkClient()
+        html_content = await client.query_html("https://example.com")
+    """
+
     def __init__(
         self,
         client=httpx.AsyncClient(
@@ -16,6 +31,23 @@ class NetworkClient:
         self.client = client
 
     async def query_html(self, url: str) -> str:
+        """
+        Asynchronously queries the given URL and returns the HTML content.
+
+        Args:
+            url (str): The URL to query.
+
+        Returns:
+            str: The HTML content of the page.
+
+        Raises:
+            httpx.RequestError: If an error occurs while making the request.
+            httpx.HTTPStatusError: If the response status code indicates an error.
+
+        Note:
+            The function sends a GET request to the specified URL with a unique User-Agent header.
+            It follows redirects and raises an exception if the request fails.
+        """
         headers = {
             "User-Agent": f"local-{uuid.uuid4()}",
         }
@@ -34,7 +66,3 @@ class NetworkClient:
         #     logger.error(
         #         f"Error response {exc.response.status_code} headers {exc.response.headers} while requesting {exc.request.url!r}."
         #     )
-
-    async def query_html_rate_limiting(self, url: str, limit) -> str:
-        async with limit:
-            self.query_html(url)

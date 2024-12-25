@@ -4,11 +4,24 @@ logger = logging.getLogger(__name__)
 
 
 class HTMLParser:
+    """
+    A class to parse HTML content and extract links.
+    """
+
     def __init__(self):
         pass
 
-    # Use a decorator maybe?
     def extract_links(self, filtering_method, html_content: str) -> set:
+        """
+        Extracts and filters links from the provided HTML content.
+
+        Args:
+            filtering_method (function): A function that takes a link as input and returns the filtered link.
+            html_content (str): The HTML content from which to extract links.
+
+        Returns:
+            set: A set of filtered links.
+        """
         # Extract all href links
         all_links = html_content.find_all("a")
         filtered_links = set()
