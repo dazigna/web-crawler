@@ -11,23 +11,19 @@ logger = logging.getLogger(__name__)
 
 class URLFilter:
     """
-    A class to filter and validate URLs based on specified criteria.
+    A URL filtering class that validates and processes URLs based on predefined rules and a base URL.
+
+    This class provides functionality to:
+    - Validate URLs based on scheme and domain rules
+    - Filter and process URLs according to specific criteria
+    - Handle both relative and absolute URLs
+    - Ensure URLs conform to allowed domains and schemes
 
     Attributes:
-    -----------
-    base_url : str
-        The base URL to be used for resolving relative URLs.
-    allowed_schemes : list
-        A list of allowed URL schemes (e.g., "http", "https").
-
-    Methods:
-    --------
-    __init__(base_url: str, allowed_schemes: list = ["http", "https"]):
-        Initializes the URLFilter with a base URL and allowed schemes.
-
-    filter_links(link: str) -> Optional[str]:
-        Filters and validates a given link based on the allowed schemes and domain.
-        Returns the resolved URL if valid, otherwise returns None.
+        base_url (str): The base URL used as a reference for processing relative URLs
+        extracted_base_url (ExtractResult): Parsed components of the base URL using tldextract
+        allowed_domain (str): The domain name that URLs are allowed to belong to
+        allowed_schemes (List[str]): List of allowed URL schemes (default: ["http", "https"])
     """
 
     def __init__(
@@ -42,7 +38,7 @@ class URLFilter:
 
     def is_url_valid(self) -> bool:
         """
-        Check if a given link is valid based on the allowed schemes and domain.
+        Check if a given link is valid.
 
         Args:
             link (str): The URL to be validated.

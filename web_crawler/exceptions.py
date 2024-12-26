@@ -30,3 +30,9 @@ class InvalidBaseURL(WebCrawlerException):
     """Raised when the base URL is invalid."""
 
     pass
+
+
+class GenericCrawlerException(WebCrawlerException):
+    """Raised when an unknown error occurs."""
+
+    pass

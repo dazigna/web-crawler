@@ -1,6 +1,9 @@
 import asyncio
 
 
+# Testing class for async workers and queueing system
+
+
 class AsyncWorkers:
     def __init__(self):
         self.queue = asyncio.Queue()

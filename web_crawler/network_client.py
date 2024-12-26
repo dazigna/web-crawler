@@ -16,10 +16,6 @@ class NetworkClient:
     Methods:
         __init__(client=httpx.AsyncClient): Initializes the NetworkClient with an optional httpx.AsyncClient instance.
         query_html(url: str) -> str: Asynchronously queries the given URL and returns the HTML content.
-
-    Example:
-        client = NetworkClient()
-        html_content = await client.query_html("https://example.com")
     """
 
     def __init__(
@@ -52,12 +48,7 @@ class NetworkClient:
         headers = {
             "User-Agent": f"local-{uuid.uuid4()}",
         }
-        # Possible improvement
-        # If we want to skip some requests we can do a Head first to check if content is HTML and do get only if content is valid
-        # resp_head = await self.client.head(url, headers=headers, timeout=5)
-        # if not ("text/html" in resp_head.headers.get("Content-Type", "")):
-        #     logger.warning(f"Content type is not HTML for {url}")
-        #     return
+
         resp = await self.client.get(url, headers=headers)
         resp.raise_for_status()
         return BeautifulSoup(resp.text, "html.parser")

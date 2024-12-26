@@ -6,7 +6,7 @@ from web_crawler.url_container import URLContainer
 from web_crawler.html_parser import HTMLParser
 from web_crawler.url_deduplicator import URLDeDuplicator
 
-from web_crawler.web_crawler_exceptions import (
+from web_crawler.exceptions import (
     RateLimitException,
     RedirectException,
     NotFoundException,
@@ -35,7 +35,7 @@ async def test_process_crawling_unit_success():
     url_container = URLContainer("https://example.com")
     await crawler.to_visit_queue.put(url_container)
 
-    await crawler.process_crawling_unit()
+    await crawler.process()
 
     assert crawler.to_visit_queue.qsize() == 1
     assert crawler.to_visit_queue.get_nowait().base_url == "https://example.com/page1"
@@ -61,7 +61,7 @@ async def test_process_crawling_unit_already_visited():
     url_container = URLContainer("https://example.com")
     await crawler.to_visit_queue.put(url_container)
 
-    await crawler.process_crawling_unit()
+    await crawler.process()
 
     assert crawler.to_visit_queue.qsize() == 0
     crawler.crawling.assert_not_awaited()
@@ -85,7 +85,7 @@ async def test_process_crawling_unit_robots_txt_prevents_fetching():
     url_container = URLContainer("https://example.com")
     await crawler.to_visit_queue.put(url_container)
 
-    await crawler.process_crawling_unit()
+    await crawler.process()
 
     assert crawler.to_visit_queue.qsize() == 0
     crawler.crawling.assert_not_awaited()
@@ -114,7 +114,7 @@ async def test_process_crawling_unit_rate_limit_exception():
 
     # Mocking asyncio.sleep to avoid waiting
     with patch("asyncio.sleep", new_callable=AsyncMock):
-        await crawler.process_crawling_unit()
+        await crawler.process()
 
     assert crawler.to_visit_queue.qsize() == 1
     crawler.crawling.assert_awaited_once()
@@ -143,7 +143,7 @@ async def test_process_crawling_unit_not_found():
 
     # Mocking asyncio.sleep to avoid waiting
     with patch("asyncio.sleep", new_callable=AsyncMock):
-        await crawler.process_crawling_unit()
+        await crawler.process()
 
     assert crawler.to_visit_queue.qsize() == 0
     crawler.crawling.assert_awaited_once()
@@ -169,7 +169,7 @@ async def test_process_crawling_unit_redirect():
     await crawler.to_visit_queue.put(url_container)
 
     with patch("asyncio.sleep", new_callable=AsyncMock):
-        await crawler.process_crawling_unit()
+        await crawler.process()
 
     assert crawler.to_visit_queue.qsize() == 1
     crawler.crawling.assert_awaited_once()
@@ -196,7 +196,7 @@ async def test_process_crawling_unit_generic_exception():
 
     # Mocking asyncio.sleep to avoid waiting
     with patch("asyncio.sleep", new_callable=AsyncMock):
-        await crawler.process_crawling_unit()
+        await crawler.process()
 
     assert crawler.to_visit_queue.qsize() == 1
     crawler.crawling.assert_awaited_once()
@@ -222,7 +222,7 @@ async def test_process_crawling_unit_general_exception_exceed_tries():
     await crawler.to_visit_queue.put(url_container)
 
     with patch("asyncio.sleep", new_callable=AsyncMock):
-        await crawler.process_crawling_unit()
+        await crawler.process()
 
     assert crawler.to_visit_queue.qsize() == 0
     crawler.crawling.assert_awaited_once()

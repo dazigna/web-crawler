@@ -7,26 +7,22 @@ logger = logging.getLogger(__name__)
 
 class RobotParser:
     """
-    A class to parse and interact with the robots.txt file of a website.
+    A class for parsing and interpreting robots.txt files from websites.
+
+    This class handles the fetching and parsing of robots.txt files, and provides methods
+    to check crawling permissions and retrieve crawling parameters like delays and request rates.
+
+        base_url (str): The base URL of the website to crawl.
+        default_crawl_delay (int, optional): Default delay between crawls in seconds if not specified
+            in robots.txt. Defaults to 1.
+        default_request_rate (int, optional): Default number of requests allowed per second if not
+            specified in robots.txt. Defaults to 1.
 
     Attributes:
-        robot_url (str): The URL of the robots.txt file.
-        robot_parser (RobotFileParser): An instance of RobotFileParser to parse the robots.txt file.
-        _default_crawl_delay (int): The default crawl delay if not specified in robots.txt.
-        _default_request_rate (int): The default request rate if not specified in robots.txt.
-
-    Methods:
-        parse():
-            Reads and parses the robots.txt file from the specified URL.
-
-        can_fetch(user_agent, url):
-            Checks if a given user agent is allowed to fetch a given URL according to the robots.txt file.
-
-        crawl_delay:
-            Returns the crawl delay specified in the robots.txt file or the default crawl delay if not specified.
-
-        request_rate:
-            Returns the request rate specified in the robots.txt file or the default request rate if not specified.
+        robot_url (str): The complete URL to the robots.txt file.
+        robot_parser (RobotFileParser): Parser object for handling robots.txt content.
+        _default_crawl_delay (int): Default crawl delay if none specified in robots.txt.
+        _default_request_rate (int): Default request rate if none specified in robots.txt.
     """
 
     def __init__(

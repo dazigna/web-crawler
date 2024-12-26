@@ -15,11 +15,12 @@ from web_crawler.url_filter import URLFilter
 from web_crawler.url_deduplicator import URLDeDuplicator
 from web_crawler.robot_parser import RobotParser
 from web_crawler.url_container import URLContainer
-from web_crawler.web_crawler_exceptions import (
+from web_crawler.exceptions import (
     RateLimitException,
     RedirectException,
     NotFoundException,
     InvalidBaseURL,
+    GenericCrawlerException,
 )
 
 
@@ -28,36 +29,27 @@ logger = logging.getLogger(__name__)
 
 class WebCrawler:
     """
-    WebCrawler is a class that performs asynchronous web crawling using multiple worker tasks.
+    A web crawler that asynchronously navigates through web pages, extracts links, and stores the results.
+
+    This crawler implements features such as:
+    - Asynchronous crawling with multiple workers
+    - Respect for robots.txt rules
+    - Rate limiting handling with exponential backoff
+    - URL filtering and deduplication
+    - Persistent storage of crawled data
 
     Attributes:
-        start_url (str): The initial URL to start crawling from.
-        network_client (NetworkClient): The client used for network requests.
-        storage_client (StorageClient): The client used for storing crawled data.
-        num_workers (int): The number of worker tasks to use for crawling.
-        max_retries (int): The maximum number of retries for failed requests.
-        backoff (int): The backoff time in seconds for retrying failed requests.
-        to_visit_queue (asyncio.Queue): The queue of URLs to visit.
-        url_filter (URLFilter): The filter used to filter URLs.
-        robot_parser (RobotParser): The parser used to parse robots.txt files.
+        start_url (str): The initial URL where crawling begins
+        network_client (NetworkClient): Client for making HTTP requests
+        storage_client (StorageClient): Client for storing crawled data
+        url_filter (URLFilter): Filter for validating and processing URLs
+        robot_parser (RobotParser): Parser for handling robots.txt rules
+        to_visit_queue (asyncio.Queue): Queue of URLs to be crawled
+        num_workers (int): Number of concurrent crawler workers
+        max_retries (int): Maximum number of retry attempts for failed requests
+        backoff (int): Base time in seconds for exponential backoff
 
-    Methods:
-        crawl_with_workers():
-            Initializes the crawling process by adding the start URL to the queue and then creates worker tasks to process the URLs in the queue.
-            Waits for the queue to be fully processed before canceling the worker tasks and saving the results to a file.
-
-        workers():
-            Logs the start of a worker, then enters an infinite loop where it abides by the robots.txt crawling policy and processes a crawling unit.
-            Handles worker cancellation.
-
-        process_crawling_unit():
-            Processes a single crawling unit by fetching a URL from the queue and processing it.
-            Checks if the URL can be fetched based on the robots.txt rules, crawls the URL to find unique URLs, and adds them to the queue.
-            Handles HTTP errors, including rate limiting (HTTP 429) by retrying with backoff.
-            Logs errors and retries up to a maximum number of attempts.
-            Marks the task as done in the queue after processing.
-
-        crawling(url) -> set:
+        InvalidBaseURL: If the starting URL is invalid
     """
 
     def __init__(
@@ -101,15 +93,6 @@ class WebCrawler:
         queue and then creates a number of worker tasks to process the URLs in the queue.
         The method waits for the queue to be fully processed before canceling the worker
         tasks and saving the results to a file.
-
-        Args:
-            None
-
-        Returns:
-            None
-
-        Raises:
-            asyncio.CancelledError: If the worker tasks are cancelled.
         """
         await self.to_visit_queue.put(URLContainer(self.start_url))
 
@@ -122,12 +105,14 @@ class WebCrawler:
             for i in range(self.num_workers)
         ]
 
+        # Wait for the queue to be fully processed
         await self.to_visit_queue.join()
 
+        # Cancels workers once the queue is empty
         for worker in workers:
             worker.cancel()
 
-        # Save to file
+        # Save to file - Caveat, if the program is interrupted before this point, the data will not be saved
         self.storage_client.write_to_file()
 
     async def workers(self):
@@ -136,7 +121,7 @@ class WebCrawler:
 
         This method logs the start of a worker, then enters an infinite loop where it:
         - Abides by the robots.txt crawling policy by sleeping for the specified crawl delay with additional jitter.
-        - Processes a crawling unit.
+        - Triggers the processing
 
         If the worker is cancelled, it logs the cancellation and exits the loop.
 
@@ -150,40 +135,34 @@ class WebCrawler:
                 await asyncio.sleep(
                     self.robot_parser.crawl_delay + random.uniform(0, 1)
                 )
-                await self.process_crawling_unit()
+                await self.process()
             except asyncio.CancelledError:
                 logger.error(
                     f"Worker: {asyncio.current_task().get_name()} has been cancelled"
                 )
                 return
 
-    async def process_crawling_unit(self):
+    async def process(self):
         """
-        Process a single crawling unit by fetching a URL from the queue and processing it.
+        Process URLs from the queue and handle crawling logic.
 
-        This method performs the following steps:
-        1. Fetches a URL from the `to_visit_queue`.
-        2. Checks if the URL can be fetched based on the `robots.txt` rules.
-        3. If allowed, crawls the URL to find unique URLs and adds them to the queue.
-        4. Handles HTTP errors, including rate limiting (HTTP 429) by retrying with backoff.
-        5. Logs errors and retries up to a maximum number of attempts.
-
-        Exceptions:
-            - Handles `httpx.HTTPStatusError` for HTTP errors.
-            - Handles generic exceptions and retries based on the number of attempts.
-
-        Logging:
-            - Logs the URL being visited.
-            - Logs the number of unique URLs found.
-            - Logs warnings if fetching is prevented by `robots.txt`.
-            - Logs errors and retry attempts.
-
-        Queue Management:
-            - Marks the task as done in the queue after processing.
-
+        This method continuously processes URLs from the queue, handling various scenarios and exceptions:
+        - Checks if URL has already been crawled
+        - Validates against robots.txt rules
+        - Handles rate limiting with exponential backoff
+        - Manages redirects
+        - Retries failed requests up to max_retries
         Returns:
             None
+        Raises:
+            RateLimitException: When rate limit is hit, triggers backoff
+            RedirectException: When URL redirects to another location
+            NotFoundException: When page is not found (404)
+            Exception: For other errors, will retry up to max_retries
+        Queue Management:
+            Marks the task as done in the queue after processing.
         """
+
         # Fetch URL from queue
         url_to_visit_container = await self.to_visit_queue.get()
         url_to_visit = url_to_visit_container.base_url
@@ -226,20 +205,26 @@ class WebCrawler:
 
     async def crawling(self, url: str) -> Set:
         """
-        Crawls the given URL to extract and deduplicate links.
+        Crawls a given URL and extracts unique links from its HTML content.
 
+        This asynchronous method performs web crawling by:
+        1. Fetching HTML content from the URL
+        2. Handling various HTTP status codes and exceptions
+        3. Extracting links from the HTML
+        4. Storing crawled URLs and their links
+        5. Deduplicating extracted URLs
         Args:
-            url (str): The URL to crawl.
-
+            url (str): The URL to crawl
         Returns:
-            set: A set of unique URLs extracted from the HTML content of the given URL.
-
-        Logs:
-            Logs the crawling process for the given URL.
-
+            Set: A set of unique URLs found in the page that haven't been crawled yet.
+                Returns None if the HTML content is empty.
         Raises:
-            Any exceptions raised by the network client or HTML parser will propagate.
+            NotFoundException: When the URL returns a 404 status code
+            RateLimitException: When the crawler is being rate limited (429)
+            RedirectException: When the URL redirects (301, 302)
+            GenericCrawlerException: For other HTTP errors not explicitly handled
         """
+
         logger.info(f"Crawling {url}")
 
         # Get HTML content
@@ -259,11 +244,13 @@ class WebCrawler:
                     status_code=e.response.status_code,
                 )
             else:
-                raise e
+                raise GenericCrawlerException(f"Generic Crawler Error: {e}")
+
         # Handle empty HTML pages
         if not html_content:
             self.storage_client.add(url)
             return None
+
         # Extract all links
         html_urls = HTMLParser().extract_links(
             self.url_filter.filter_links, html_content
@@ -280,6 +267,19 @@ class WebCrawler:
         return unique_urls
 
     async def handle_rate_limit(self, url_container: URLContainer, backoff: int):
+        """
+        Handle rate limiting by implementing an exponential backoff strategy.
+
+        This method applies a delay when rate limiting is detected, using an exponential
+        backoff approach with some random jitter to prevent synchronized retries.
+
+        Args:
+            url_container (URLContainer): Container holding URL information and retry attempts
+            backoff (int): Base backoff time in seconds
+
+        Returns:
+            None
+        """
         back_pressure = (backoff + random.uniform(0, backoff)) * url_container.tries
         logger.warning(
             f"Rate limited - retrying {url_container.base_url} in {back_pressure} seconds"

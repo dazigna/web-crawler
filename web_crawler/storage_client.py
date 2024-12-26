@@ -8,52 +8,20 @@ logger = logging.getLogger(__name__)
 
 class StorageClient:
     """
-
-    StorageClient is a simple in-memory storage client for storing and retrieving data associated with URLs.
-
+    A class that provides storage functionality for URLs and their associated data.
+    This class implements a simple key-value storage system where URLs serve as keys
+    and can be associated with arbitrary data. The storage can be persisted to a JSON file.
     Attributes:
-        storage (dict): A dictionary to store URLs and their associated data.
-        output_file_path (Path): The path where the output file will be saved.
-        output_file_name (str): The name of the output file.
+        storage (dict): Dictionary storing URL-data pairs
+        output_file_path (Path): Directory path where storage file will be saved
+        output_file_name (str): Name of the storage file
 
-    Methods:
-        __init__():
-            Initializes the StorageClient with an empty storage dictionary, output file path, and output file name.
-
-        add(url, data=None):
-            Adds a URL and its associated data to the storage.
-            Args:
-                url (str): The URL to be added.
-                data (optional): The data to be associated with the URL.
-
-        remove(url):
-            Removes a URL and its associated data from the storage.
-            Args:
-                url (str): The URL to be removed.
-
-        get(url):
-            Retrieves the data associated with a URL from the storage.
-            Args:
-                url (str): The URL whose data is to be retrieved.
-            Returns:
-                The data associated with the URL, or None if the URL is not found.
-
-        get_all():
-            Retrieves the entire storage dictionary.
-            Returns:
-                dict: The storage dictionary containing all URLs and their associated data.
-
-        write_to_file(filename):
-            Writes the storage dictionary to a file in JSON format.
-            Args:
-                filename (str): The name of the file to write the storage data to.
     """
 
     def __init__(self, output_file_path: Path, output_file_name: str = "storage.json"):
         self.storage = {}
         self.output_file_path = output_file_path
         self.output_file_name = output_file_name
-        # self.file_handle = open(self.output_file_path / self.output_file_name, "a")
 
     def add(self, url: str, data: List | None = None):
         """
@@ -65,19 +33,6 @@ class StorageClient:
         """
         logger.info(f"Adding URL: {url} and data: {data}")
         self.storage[url] = data
-        # self._write_line(url, data)
-
-    # def _write_line(self, url, data):
-    #     """
-    #     Writes a line to the storage file.
-
-    #     Args:
-    #         url (str): The URL to be added to the storage.
-    #         data (optional): The data associated with the URL. Defaults to None.
-    #     """
-    #     entry = {"url": url, "data": data}
-    #     self.file_handle.write(json.dumps(entry) + "\n")
-    #     self.file_handle.flush()
 
     def remove(self, url: str):
         """
@@ -126,9 +81,6 @@ class StorageClient:
         """
         Writes the contents of the storage to a file in JSON format.
 
-        Args:
-            filename (str): The name of the file to write to.
-
         Raises:
             IOError: If the file cannot be opened or written to.
         """
@@ -147,13 +99,3 @@ class StorageClient:
             bool: True if the URL is found in the storage, False otherwise.
         """
         return url in self.storage.keys()
-
-    # def close(self):
-    #     """
-    #     Close the file handle.
-    #     """
-    #     if self.file_handle and not self.file_handle.closed:
-    #         self.file_handle.close()
-
-    # def __del__(self):
-    #     self.close()

@@ -1,9 +1,5 @@
 TODO:
 Write tradeoffs
-Review docstrings
-Fix tests
-reinforce command line
-
 
 # Web Crawler
 A robust asynchronous web crawler built with Python that respects robots.txt and implements rate limiting.
@@ -90,6 +86,8 @@ We can decouple each worker util by slightly modifying the implementation to all
 
 ### Logging 
 ### Optimizations
+-         # If we want to skip some requests we can do a Head first to check if content is HTML and do get only if content is valid
+
 - DNS record caching
 - Bloom filter for URL deduplication
 - Better similarity comparision with Jacard or cosine similarity
