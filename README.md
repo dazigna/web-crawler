@@ -17,7 +17,7 @@ Requires python 3.13
 
 ```bash
 python main.py \
-    --url https://example.com \
+    --url "https://example.com" \
     --workers 5 \
     --max-retries 3 \
     --backoff 5
