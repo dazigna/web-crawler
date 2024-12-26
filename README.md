@@ -75,13 +75,13 @@ Python offers 3 types of concurrency
 - Multi-threading
 - Coroutines
 
-To decide which one we need in this use case we need to understand if our application is 
+To decide which one I need in this use case we need to understand if our application is 
 - **CPU bound**: Processing time determined by CPU speed
 - **I/O bound**: Processing time determiner by input/output operations
 
-In our case, our application makes requests to the internet and saves data to files, it is then I/O bound. Adding more CPU would not make it faster.
+In this use case, the application makes requests to the internet and saves data to files, it is then I/O bound. Adding more CPU would not make it faster.
 
-We then have 2 choices 
+I then have 2 choices 
 - Multi-threading (parallelism) using the threading API or ThreadPoolExecutor (concurrent futures)
 - Coroutines using AsyncIO
 
@@ -112,20 +112,22 @@ We then have 2 choices
 - More complex error handling
 - Steeper learning curve
 
-I decided to use AsyncIO for this project based on the use case and AsyncIO offerings.
+
+### Choice 
+**I decided to use AsyncIO for this project based on the use case and AsyncIO offerings.**
 - Web crawling is I/O-bound
 - High concurrency with low overhead
 - Excellent support in modern Python
 - Better control over rate limiting
 
 ### Asyncio Coroutines
-#### Pros:
+*Pros:*
 - Excellent for I/O-bound tasks
 - Lower memory footprint
 - No thread synchronization needed
 - Better performance for network operations
 
-#### Cons:
+*Cons:*
 - Requires async-compatible libraries
 - More complex error handling
 - Cannot use blocking calls directly
@@ -135,7 +137,7 @@ I decided to use AsyncIO for this project based on the use case and AsyncIO offe
 
 
 ### Network client
-Using AsyncIO for networking, we can't use the classic requests package and need to use an async compatible one, I am using Httpx to handle async network requests.
+Using AsyncIO for networking, I can't use the classic requests package and need to use an async compatible one, I am using Httpx to handle async network requests.
 
 Doing a bit of research on why requests was not async compatible.
 
@@ -147,7 +149,10 @@ Doing a bit of research on why requests was not async compatible.
 
 ### Data Storage
 For this project, for the sake of simplicity, I decided to use a simple in-memory data structure that I write to a file on crawling completion. It is abstracted in a way that replacing the implementation with a database or any other type of storage would be transparent for the crawler.
-A big caveat here is that I do an atomic write at the end of the crawling, meaning if the crawler errors out we loose the progress. I could implement some file streaming and construct a JSON object at the crawler goes but for a time bounded project, I prioritize the processing loop.
+
+*Caveat:*
+
+A big caveat here is that I do an atomic write at the end of the crawling, meaning if the crawler errors out we loose the progress. I could implement some file streaming and construct a JSON object at the crawler goes but for a time bounded project, I prioritized the processing loop.
 
 In a second iteration we could use a database to store the results wether is SQL or No-SQL, would be decided based on the use case, for simple links and children links, I could spin up a simple No-SQL DB.
 We could also think about using some in-memory cache to speed up the processing and avoid re-querying pages.
@@ -168,7 +173,7 @@ I am using a simple Set difference, which is a O(n) operation, it works for this
 I am only interested in parsing HTML content and extracting link tags (<a href> </a>). I purposefully decided against crawling dynamic content to keep the scope small. However, we could use something link [https://playwright.dev/](Playwright) or [Selenium](https://www.selenium.dev/) to execute dynamic content and crawl those pages too.
 
 ### Crawler traps
-My crawler can be trapped by pages that redirect to itself indefinitely - since it's a time bounded project, I decided to leave it out and can come back in another iteration
+This crawler can be trapped by pages that redirect to itself indefinitely - since it's a time bounded project, I decided to leave it out and can come back in another iteration.
 To correct this behavior we can add a depth field to our URL container that gets stored alongside our data and increment this field each time we follow a link. Once the depth exceeds a certain threshold, we stop crwaling this page.
 
 ### Logging 
