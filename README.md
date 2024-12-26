@@ -46,10 +46,10 @@ pytest
 ### Architecture
 
 #### Web crawler 
-![web crawler](web_crawler_architecture.jpg "Web crawler architecture")
+![web crawler](docs/web_crawler_architecture.jpg "Web crawler architecture")
 
 #### Crawling unit
-![crawling unit](crawling_unit.jpg "Crawling unit")
+![crawling unit](docs/crawling_unit.jpg "Crawling unit")
 
 ### Trade-offs
 
