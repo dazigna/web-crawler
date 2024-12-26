@@ -85,3 +85,48 @@ def test_filter_links_absolute_url_different_domain():
 
     result = url_filter.filter_links(link)
     assert result is None
+
+
+def test_is_url_valid_valid_url():
+    base_url = "https://example.com"
+    url_filter = URLFilter(base_url)
+
+    result = url_filter.is_url_valid()
+
+    assert result is True
+
+
+def test_is_url_valid_invalid_scheme():
+    base_url = "ftp://example.com"
+    url_filter = URLFilter(base_url)
+
+    result = url_filter.is_url_valid()
+
+    assert result is False
+
+
+def test_is_url_valid_no_domain():
+    base_url = "https://"
+    url_filter = URLFilter(base_url)
+
+    result = url_filter.is_url_valid()
+
+    assert result is False
+
+
+def test_is_url_valid_no_suffix():
+    base_url = "https://example"
+    url_filter = URLFilter(base_url)
+
+    result = url_filter.is_url_valid()
+
+    assert result is False
+
+
+def test_is_url_valid_no_scheme():
+    base_url = "example.com"
+    url_filter = URLFilter(base_url)
+
+    result = url_filter.is_url_valid()
+
+    assert result is False

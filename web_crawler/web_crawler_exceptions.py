@@ -24,3 +24,9 @@ class NotFoundException(WebCrawlerException):
     """Raised when crawler hits rate limits."""
 
     pass
+
+
+class InvalidBaseURL(WebCrawlerException):
+    """Raised when the base URL is invalid."""
+
+    pass

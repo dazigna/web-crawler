@@ -19,19 +19,11 @@ from web_crawler.web_crawler_exceptions import (
     RateLimitException,
     RedirectException,
     NotFoundException,
+    InvalidBaseURL,
 )
 
 
-# logging.basicConfig(
-#     format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
-#     level=logging.INFO,
-#     datefmt="%H:%M:%S",
-#     encoding="utf-8",
-#     handlers=[logging.FileHandler("debug.log", mode="w"), logging.StreamHandler()],
-# )
-
 logger = logging.getLogger(__name__)
-# logging.getLogger("chardet.charsetprober").disabled = True
 
 
 class WebCrawler:
@@ -83,6 +75,11 @@ class WebCrawler:
         self.start_url = start_url
         self.network_client = network_client
         self.url_filter = URLFilter(self.start_url)
+        # Validate URL
+        if not self.url_filter.is_url_valid():
+            logger.error(f"Crawler not proceeding, invalid URL: {self.start_url}")
+            raise InvalidBaseURL(f"Invalid URL: {self.start_url}")
+
         self.robot_parser = RobotParser(self.start_url)
 
         self.storage_client = storage_client
@@ -93,7 +90,7 @@ class WebCrawler:
         self.backoff = backoff
 
         logger.info(
-            f"Web Crawler configuration - workers: {self.num_workers}, retries: {self.max_retries}, backoff: {self.backoff}"
+            f"Web Crawler configuration - url: {self.start_url}, workers: {self.num_workers}, retries: {self.max_retries}, backoff: {self.backoff}"
         )
 
     async def crawl_with_workers(self):

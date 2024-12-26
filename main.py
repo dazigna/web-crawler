@@ -29,12 +29,12 @@ async def main(url: str, num_workers: int, max_retries: int, backoff: int):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--url",
-        type=str,
-        help="The URL to start crawling from",
+    required = parser.add_argument_group("required arguments")
+    optional = parser.add_argument_group("optional arguments")
+    required.add_argument(
+        "--url", type=str, help="The URL to start crawling from", required=True
     )
-    parser.add_argument(
+    optional.add_argument(
         "--workers",
         type=int,
         nargs="?",
@@ -42,7 +42,7 @@ if __name__ == "__main__":
         default=1,
         help="Number of workers to use for crawling - default to 1 worker",
     )
-    parser.add_argument(
+    optional.add_argument(
         "--retries",
         type=int,
         nargs="?",
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         default=3,
         help="Number of retries to attempt for each URL - default is 3 tries",
     )
-    parser.add_argument(
+    optional.add_argument(
         "--backoff",
         nargs="?",
         const=5,
@@ -59,12 +59,20 @@ if __name__ == "__main__":
         help="Backoff time in seconds between retries - default is 5 seconds",
     )
 
-    # Start the web crawler
-    domain = "https://overstory.com"
-    # domain = "https://crawler-test.com"
-    # domain = "https://realpython.github.io/fake-jobs/"
-    # domain = "https://webscraper.io/test-sites/e-commerce/allinone"
-    # domain = "https://quotes.toscrape.com/"
     args = parser.parse_args()
     logger.info(f"Starting web crawler with current args:\n {args}")
-    asyncio.run(main(args.url or domain, args.workers, args.retries, args.backoff))
+    # Check for arguments validity
+    if args.workers < 1:
+        logger.error("Number of workers must be greater than 0")
+        exit(1)
+    if args.retries < 1:
+        logger.error("Number of retries must be greater than 0")
+        exit(1)
+    if args.backoff < 0:
+        logger.error("Backoff time must be greater than or equal to 0")
+        exit(1)
+    if args.url == "":
+        logger.error("URL cannot be empty")
+        exit(1)
+
+    asyncio.run(main(args.url, args.workers, args.retries, args.backoff))

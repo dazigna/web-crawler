@@ -36,8 +36,26 @@ class URLFilter:
         allowed_schemes: List = ["http", "https"],
     ):
         self.base_url = base_url
-        self.allowed_domain = tldextract.extract(self.base_url).domain
+        self.extracted_base_url = tldextract.extract(self.base_url)
+        self.allowed_domain = self.extracted_base_url.domain
         self.allowed_schemes = allowed_schemes
+
+    def is_url_valid(self) -> bool:
+        """
+        Check if a given link is valid based on the allowed schemes and domain.
+
+        Args:
+            link (str): The URL to be validated.
+
+        Returns:
+            bool: True if the URL is valid, otherwise False.
+        """
+        urlparse_result = urlparse(self.base_url)
+        return (
+            urlparse_result.hostname is not None
+            and self.extracted_base_url.suffix != ""
+            and urlparse_result.scheme in self.allowed_schemes
+        )
 
     def filter_links(self, link: str) -> str | None:
         """
