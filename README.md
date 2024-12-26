@@ -1,3 +1,9 @@
+TODO:
+Write tradeoffs
+Review docstrings
+Fix tests
+
+
 # Web Crawler
 A robust asynchronous web crawler built with Python that respects robots.txt and implements rate limiting.
 
@@ -37,9 +43,18 @@ pytest
 
 ## Technical Details
 
+### Architecture
+
+#### Web crawler 
+![web crawler](web_crawler_architecture.jpg "Web crawler architecture")
+
+#### Crawling unit
+![crawling unit](crawling_unit.jpg "Crawling unit")
+
 ### Trade-offs
 
 ### Concurrency
+Justify the choice of asyncIO over multirprocessing and threading
 - **CPU bound**: Processing time determined by CPU speed
 - **I/O bound**: Using coroutines with asyncio for optimal performance
 
@@ -49,9 +64,26 @@ pytest
 - Efficient for handling 1000s+ of small tasks
 - Better suited for I/O operations than ThreadPoolExecutor
 
+Define worker pattern used
+
+
+Use of httpx and not classic requests package:
+
 ### Data Storage
+Define why use in memory store vs database 
 - Simple in-memory storage backed by file I/O
 
+### URL filtering
+define the choices , why no normalization
+
+### Content parsing
+only href and no dynamic content otherwise we need to execute the links using playwright or selenium or else and beceomes much more complicated for a small time boudnded projects
+
+Crawler traps
+not handled
+
+Shared instances of network client and other functional components - ease of mocking and implementation for a time bounded project, none of the utils are storing state and are purely functional
+We can decouple each worker util by slightly modifying the implementation to allow each worker to spin up its dependencies and be autonomous
 
 ### Optimizations
 - DNS record caching
