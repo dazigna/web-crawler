@@ -136,6 +136,18 @@ class StorageClient:
         with open(output_file_path, "w") as f:
             f.write(json.dumps(self.storage, indent=4))
 
+    def contains(self, url: str) -> bool:
+        """
+        Check if the storage contains a given URL.
+
+        Args:
+            url (str): The URL to check for in the storage.
+
+        Returns:
+            bool: True if the URL is found in the storage, False otherwise.
+        """
+        return url in self.storage.keys()
+
     # def close(self):
     #     """
     #     Close the file handle.

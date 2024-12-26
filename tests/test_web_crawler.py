@@ -1,11 +1,16 @@
 import pytest
-import httpx
 
 from unittest.mock import AsyncMock, patch, MagicMock
 from web_crawler.web_crawler import WebCrawler
 from web_crawler.url_container import URLContainer
 from web_crawler.html_parser import HTMLParser
 from web_crawler.url_deduplicator import URLDeDuplicator
+
+from web_crawler.web_crawler_exceptions import (
+    RateLimitException,
+    RedirectException,
+    NotFoundException,
+)
 
 
 # ----------- Scheduling logic ------------
@@ -15,6 +20,7 @@ from web_crawler.url_deduplicator import URLDeDuplicator
 async def test_process_crawling_unit_success():
     network_client = MagicMock()
     storage_client = MagicMock()
+    storage_client.contains = MagicMock(return_value=False)
     robot_parser = MagicMock()
     robot_parser.can_fetch.return_value = True
 
@@ -34,6 +40,31 @@ async def test_process_crawling_unit_success():
     assert crawler.to_visit_queue.qsize() == 1
     assert crawler.to_visit_queue.get_nowait().base_url == "https://example.com/page1"
     crawler.crawling.assert_awaited_once_with("https://example.com")
+
+
+@pytest.mark.asyncio
+async def test_process_crawling_unit_already_visited():
+    network_client = MagicMock()
+    storage_client = MagicMock()
+    storage_client.contains = MagicMock(return_value=True)
+    robot_parser = MagicMock()
+    robot_parser.can_fetch.return_value = True
+
+    crawler = WebCrawler(
+        start_url="https://example.com",
+        network_client=network_client,
+        storage_client=storage_client,
+    )
+    crawler.robot_parser = robot_parser
+    crawler.crawling = AsyncMock(return_value=["https://example.com/page1"])
+
+    url_container = URLContainer("https://example.com")
+    await crawler.to_visit_queue.put(url_container)
+
+    await crawler.process_crawling_unit()
+
+    assert crawler.to_visit_queue.qsize() == 0
+    crawler.crawling.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -57,13 +88,15 @@ async def test_process_crawling_unit_robots_txt_prevents_fetching():
     await crawler.process_crawling_unit()
 
     assert crawler.to_visit_queue.qsize() == 0
-    crawler.crawling.assert_not_called()
+    crawler.crawling.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_process_crawling_unit_http_status_error_429():
+async def test_process_crawling_unit_rate_limit_exception():
     network_client = MagicMock()
     storage_client = MagicMock()
+    storage_client.contains = MagicMock(return_value=False)
+
     robot_parser = MagicMock()
     robot_parser.can_fetch.return_value = True
 
@@ -73,26 +106,26 @@ async def test_process_crawling_unit_http_status_error_429():
         storage_client=storage_client,
     )
     crawler.robot_parser = robot_parser
-    crawler.crawling = AsyncMock(
-        side_effect=httpx.HTTPStatusError(
-            "Error", request=None, response=MagicMock(status_code=429)
-        )
-    )
+    crawler.crawling = AsyncMock(side_effect=RateLimitException("hello"))
 
     url_container = URLContainer("https://example.com")
     await crawler.to_visit_queue.put(url_container)
-
+    print(crawler.crawling)
     # Mocking asyncio.sleep to avoid waiting
-    with patch("asyncio.sleep", new_callable=AsyncMock):
-        await crawler.process_crawling_unit()
+    with pytest.raises(RateLimitException) as exc_info:
+        with patch("asyncio.sleep", new_callable=AsyncMock):
+            await crawler.process_crawling_unit()
 
     assert crawler.to_visit_queue.qsize() == 1
+    assert crawler.crawling.called()
 
 
 @pytest.mark.asyncio
 async def test_process_crawling_unit_http_status_error_4xx():
     network_client = MagicMock()
     storage_client = MagicMock()
+    storage_client.contains = MagicMock(return_value=False)
+
     robot_parser = MagicMock()
     robot_parser.can_fetch.return_value = True
 

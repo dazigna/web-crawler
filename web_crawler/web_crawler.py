@@ -7,14 +7,14 @@ import argparse
 from pathlib import Path
 from typing import Set
 
-from .network_client import NetworkClient
-from .storage_client import StorageClient
-from .html_parser import HTMLParser
-from .url_filter import URLFilter
-from .url_deduplicator import URLDeDuplicator
-from .robot_parser import RobotParser
-from .url_container import URLContainer
-from .web_crawler_exceptions import (
+from network_client import NetworkClient
+from storage_client import StorageClient
+from html_parser import HTMLParser
+from url_filter import URLFilter
+from url_deduplicator import URLDeDuplicator
+from robot_parser import RobotParser
+from url_container import URLContainer
+from web_crawler_exceptions import (
     RateLimitException,
     RedirectException,
     NotFoundException,
@@ -194,7 +194,7 @@ class WebCrawler:
         logger.debug(f"Queue size: {self.to_visit_queue.qsize()}")
         try:
             # Check if link has already been crawled
-            if self.storage_client.get(url_to_visit):
+            if self.storage_client.contains(url_to_visit):
                 logger.info(f"URL already visited: {url_to_visit} - skipping")
                 return
             # Check if we can fetch the URL based on robots.txt
@@ -205,8 +205,8 @@ class WebCrawler:
                     await self.to_visit_queue.put(URLContainer(url))
             else:
                 logging.info(f"Robots.txt prevents fetching {url_to_visit} - skipping")
-
         except RateLimitException as _exc:
+            print(f"EXECEPTION {_exc}")
             await self.handle_rate_limit(url_to_visit_container, self.backoff)
             await self.to_visit_queue.put(url_to_visit_container)
         except RedirectException as exc:
@@ -215,6 +215,7 @@ class WebCrawler:
         except NotFoundException as exc:
             logger.info(f"{exc} - Page not found for {url_to_visit}")
         except Exception as exc:
+            print("inside generic exception block")
             if url_to_visit_container.tries < self.max_retries:
                 logger.warning(
                     f"Retrying {url_to_visit} - try {url_to_visit_container.tries}"

@@ -31,3 +31,18 @@ def test_get_all_keys_empty():
     storage_client = StorageClient(output_file_path=Path(__file__).parent)
     keys = storage_client.get_all_keys()
     assert len(keys) == 0
+
+
+def test_get():
+    storage_client = StorageClient(output_file_path=Path(__file__).parent)
+    storage_client.add("https://www.example.com", "example")
+
+    assert storage_client.get("https://www.example.com") == "example"
+
+
+def test_contains():
+    storage_client = StorageClient(output_file_path=Path(__file__).parent)
+    storage_client.add("https://www.example.com", "example")
+
+    assert storage_client.contains("https://www.example.com") is True
+    assert storage_client.contains("https://www.test.com") is False

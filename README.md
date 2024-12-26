@@ -19,8 +19,10 @@ A robust asynchronous web crawler built with Python that respects robots.txt and
 ## Usage
 Basic usage:
 
+Requires python 3.13
+
 ```bash
-python web_crawler.py \
+python web_crawler/web_crawler.py \
     --url https://example.com \
     --workers 5 \
     --max-retries 3 \
@@ -48,8 +50,8 @@ pytest
 #### Web crawler 
 ![web crawler](docs/web_crawler_architecture.jpg "Web crawler architecture")
 
-#### Crawling unit
-![crawling unit](docs/crawling_unit.jpg "Crawling unit")
+#### Worker
+![Worker](docs/worker.jpg "Worker")
 
 ### Trade-offs
 
@@ -85,6 +87,7 @@ not handled
 Shared instances of network client and other functional components - ease of mocking and implementation for a time bounded project, none of the utils are storing state and are purely functional
 We can decouple each worker util by slightly modifying the implementation to allow each worker to spin up its dependencies and be autonomous
 
+### Logging 
 ### Optimizations
 - DNS record caching
 - Bloom filter for URL deduplication
