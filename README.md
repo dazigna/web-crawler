@@ -15,6 +15,12 @@ Basic usage:
 
 Requires python 3.13
 
+Install dependencies - the use of a virtual env is recommended
+
+```bash
+pip install -r requirements.txt
+```
+
 ```bash
 python main.py \
     --url "https://example.com" \
