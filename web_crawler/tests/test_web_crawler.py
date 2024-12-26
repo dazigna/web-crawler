@@ -105,23 +105,24 @@ async def test_process_crawling_unit_rate_limit_exception():
         network_client=network_client,
         storage_client=storage_client,
     )
+    crawler.handle_rate_limit = AsyncMock()
     crawler.robot_parser = robot_parser
-    crawler.crawling = AsyncMock(side_effect=RateLimitException("hello"))
+    crawler.crawling = AsyncMock(side_effect=RateLimitException("Rate limit error"))
 
     url_container = URLContainer("https://example.com")
     await crawler.to_visit_queue.put(url_container)
-    print(crawler.crawling)
+
     # Mocking asyncio.sleep to avoid waiting
-    with pytest.raises(RateLimitException) as exc_info:
-        with patch("asyncio.sleep", new_callable=AsyncMock):
-            await crawler.process_crawling_unit()
+    with patch("asyncio.sleep", new_callable=AsyncMock):
+        await crawler.process_crawling_unit()
 
     assert crawler.to_visit_queue.qsize() == 1
-    assert crawler.crawling.called()
+    crawler.crawling.assert_awaited_once()
+    crawler.handle_rate_limit.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_process_crawling_unit_http_status_error_4xx():
+async def test_process_crawling_unit_not_found():
     network_client = MagicMock()
     storage_client = MagicMock()
     storage_client.contains = MagicMock(return_value=False)
@@ -135,11 +136,7 @@ async def test_process_crawling_unit_http_status_error_4xx():
         storage_client=storage_client,
     )
     crawler.robot_parser = robot_parser
-    crawler.crawling = AsyncMock(
-        side_effect=httpx.HTTPStatusError(
-            "Error", request=None, response=MagicMock(status_code=400)
-        )
-    )
+    crawler.crawling = AsyncMock(side_effect=NotFoundException("Not found"))
 
     url_container = URLContainer("https://example.com")
     await crawler.to_visit_queue.put(url_container)
@@ -149,12 +146,14 @@ async def test_process_crawling_unit_http_status_error_4xx():
         await crawler.process_crawling_unit()
 
     assert crawler.to_visit_queue.qsize() == 0
+    crawler.crawling.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_process_crawling_unit_http_status_error_429_exceeded_retries():
+async def test_process_crawling_unit_redirect():
     network_client = MagicMock()
     storage_client = MagicMock()
+    storage_client.contains = MagicMock(return_value=False)
     robot_parser = MagicMock()
     robot_parser.can_fetch.return_value = True
 
@@ -164,77 +163,50 @@ async def test_process_crawling_unit_http_status_error_429_exceeded_retries():
         storage_client=storage_client,
     )
     crawler.robot_parser = robot_parser
-    crawler.crawling = AsyncMock(
-        side_effect=httpx.HTTPStatusError(
-            "Error", request=None, response=MagicMock(status_code=429)
-        )
-    )
-
-    url_container = URLContainer("https://example.com", _tries=3)
-    await crawler.to_visit_queue.put(url_container)
-
-    with patch("asyncio.sleep", new_callable=AsyncMock):
-        await crawler.process_crawling_unit()
-
-    assert crawler.to_visit_queue.qsize() == 0
-
-
-@pytest.mark.asyncio
-async def test_process_crawling_unit_http_status_error_301():
-    network_client = MagicMock()
-    storage_client = MagicMock()
-    robot_parser = MagicMock()
-    robot_parser.can_fetch.return_value = True
-
-    crawler = WebCrawler(
-        start_url="https://example.com",
-        network_client=network_client,
-        storage_client=storage_client,
-    )
-    crawler.robot_parser = robot_parser
-    crawler.crawling = AsyncMock(
-        side_effect=httpx.HTTPStatusError(
-            "Error", request=None, response=MagicMock(status_code=301)
-        )
-    )
+    crawler.crawling = AsyncMock(side_effect=RedirectException("Redirect"))
 
     url_container = URLContainer("https://example.com")
     await crawler.to_visit_queue.put(url_container)
 
-    # Mocking asyncio.sleep to avoid waiting
     with patch("asyncio.sleep", new_callable=AsyncMock):
         await crawler.process_crawling_unit()
-
-    assert crawler.to_visit_queue.qsize() == 0
-
-
-@pytest.mark.asyncio
-async def test_process_crawling_unit_general_exception():
-    network_client = MagicMock()
-    storage_client = MagicMock()
-    robot_parser = MagicMock()
-    robot_parser.can_fetch.return_value = True
-
-    crawler = WebCrawler(
-        start_url="https://example.com",
-        network_client=network_client,
-        storage_client=storage_client,
-    )
-    crawler.robot_parser = robot_parser
-    crawler.crawling = AsyncMock(side_effect=Exception("General error"))
-
-    url_container = URLContainer("https://example.com")
-    await crawler.to_visit_queue.put(url_container)
-
-    await crawler.process_crawling_unit()
 
     assert crawler.to_visit_queue.qsize() == 1
+    crawler.crawling.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_process_crawling_unit_general_exception_exceed_retries():
+async def test_process_crawling_unit_generic_exception():
     network_client = MagicMock()
     storage_client = MagicMock()
+    storage_client.contains = MagicMock(return_value=False)
+    robot_parser = MagicMock()
+    robot_parser.can_fetch.return_value = True
+
+    crawler = WebCrawler(
+        start_url="https://example.com",
+        network_client=network_client,
+        storage_client=storage_client,
+    )
+    crawler.robot_parser = robot_parser
+    crawler.crawling = AsyncMock(side_effect=Exception("General error"))
+
+    url_container = URLContainer("https://example.com")
+    await crawler.to_visit_queue.put(url_container)
+
+    # Mocking asyncio.sleep to avoid waiting
+    with patch("asyncio.sleep", new_callable=AsyncMock):
+        await crawler.process_crawling_unit()
+
+    assert crawler.to_visit_queue.qsize() == 1
+    crawler.crawling.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_process_crawling_unit_general_exception_exceed_tries():
+    network_client = MagicMock()
+    storage_client = MagicMock()
+    storage_client.contains = MagicMock(return_value=False)
     robot_parser = MagicMock()
     robot_parser.can_fetch.return_value = True
 
@@ -249,9 +221,11 @@ async def test_process_crawling_unit_general_exception_exceed_retries():
     url_container = URLContainer("https://example.com", _tries=3)
     await crawler.to_visit_queue.put(url_container)
 
-    await crawler.process_crawling_unit()
+    with patch("asyncio.sleep", new_callable=AsyncMock):
+        await crawler.process_crawling_unit()
 
     assert crawler.to_visit_queue.qsize() == 0
+    crawler.crawling.assert_awaited_once()
 
 
 # ----------- Processing logic ------------

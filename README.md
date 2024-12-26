@@ -2,6 +2,7 @@ TODO:
 Write tradeoffs
 Review docstrings
 Fix tests
+reinforce command line
 
 
 # Web Crawler
@@ -22,7 +23,7 @@ Basic usage:
 Requires python 3.13
 
 ```bash
-python web_crawler/web_crawler.py \
+python main.py \
     --url https://example.com \
     --workers 5 \
     --max-retries 3 \
